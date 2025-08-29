@@ -1,6 +1,6 @@
 FILE FORMAT: Markdown
 
-# Magical ACatemy [draft]
+# Magical ACatemy
 
 This design document describes implementation roadmap for making a sims/dwarf-fortress inspired game about magical cats.
 It's built from bottom to top for easisess of implementation.
@@ -13,6 +13,17 @@ General information about the game:
 - Kittens come and go: "general education" may last no more than N seasons.
 - Some kittens can stay for "specific education" for more than that, they can also became teachers
 - The player starts with one cat (let's call it the founding mother)
+
+## Implementation roadmap
+
+- [design] write this design document
+- [hello] create an empty world
+- [world.gen] generate a world
+- [world.gen.empty] generate an empty world 10x10
+  provide: [world.gen]
+- [roll] generate a system of rolls using provided RNG
+- [cat.gen] generate a cat
+  - deps: [world.gen], [roll] 
 
 ## General attributes.
 
@@ -35,13 +46,13 @@ Primary attributes are attributes on their own. Secondary attributes are based u
 
 Secondary attribute are based upon other attributes.
 
-- Constitution (Base: strength, aux: agility) - affects maximum health and its regeneration
-- Speed (Base: agility, aux: Strength) - affects movement speed
-- Perception (Base: intelligence, aux: Luck) - affects how much cat can see
-- Melee combat (Base: strength, aux: agility, luck) - affects melee attacks
-- Ranged combat (Base: agility, aux: luck) - affects ranged attacks
-- Magic combat (Base: magic, aux: luck)
-- Willpower (Base: intelligence, aux: charm) - affects mental resistance
+- Constitution (Based on strength, agility) - affects maximum health and its regeneration
+- Speed (Based on agility, Strength) - affects movement speed
+- Perception (Based on intelligence, Luck) - affects how much cat can see
+- Melee combat (Based on strength, agility) - affects melee attacks
+- Ranged combat (Based on agility, luck) - affects ranged attacks
+- Magic combat (Based on magic, luck)
+- Willpower (Based on intelligence, charm) - affects mental resistance
 
 ### Secondary attributes related to school of magic.
 
@@ -64,29 +75,22 @@ School also have base attributes:
 ## Rolls
 
 - Basic rolls are written as `3d6` which means "roll 3 die, each has 6 sides"
-
 - Bonuses can be added/subtracted on top of the roll, e.g. `3d6+5` means "roll 3 die, each has 6 sides, add 5
-
 - Discarding maximum values. Consider `3d6(drop 1 high)` means discard one highest roll. E.g. if rolls were 3,4,5, then 5 will be discarded and 3+4 will be chose. Alternatively `4d5(drop 2 low)` means discarding 2 minimal values. E.g. if 1,2,2,4 were rolled, use 2+4 as result
-
-- Using attribute state. Usual attribute roll is written as `1d{strength}` which means to roll a die where number of sides is equal to attribute luck
-
-- Attribute roll. Eg `1d{luck}+{lucky}` is something which is called `luck roll` : it uses attribute of luck + its modifier from trait `lucky`.
-
+- Using attribute state. Usual attribute roll is written as `1d{strength}` which means to roll a die where number of sides is equal to attribute luck 
+- Attribute roll. E.g. `1d{luck}+{lucky}` is something which is called `luck roll` : it uses attribute of luck + its modifier from trait `lucky`.
 - `Default` roll is `8d10(drop 4 high)`, goes from 4 to 40 with average around 13.
-
 - `Chaos` roll is a special roll representing chaos and despair. Default value is `Default` roll
-
 - When two rolls compete against each other, a roll `A` wins against roll `B` if the result of roll `A` is strictly greater than the result of roll `B`. Eg if roll `A` rolled 3, roll `B` rolled 3, this is a tie and no roll won or lose. If role `A` rolled 4 and roll `B` rolled 3, roll `A` wins.
 
-## Cat stats generation
+## Cat primary stats generation
 
 Each primary attribute is initially assigned a value using the standard `Default` roll of `8d10(drop 4 high)`, with an average value around 13.
+After rolling initial values for the attributes some are upgraded and some are downgraded.
 
-After rolling initial values for each attributes:
+### Upgrades
 
 - Two unique primary attributes are randomly selected to be upgraded:
-  
   - Each of these attributes are rolled against `luck roll` (eg `1d{strength} vs 1d{luck}`).
   - If the `luck roll` wins (its value is strictly greater)
     - `Default` roll is used to generate a new potential value for the attribute.
@@ -94,9 +98,11 @@ After rolling initial values for each attributes:
       - the attribute value is assigned to it
     - otherwise(new value ≤ existing value) nothing changes and the attribute value stays the same
   - if `luck roll` doesn't win (tie or loses), nothing changes and the attribute value stays the same
+  - **NOTE**: during reroll the `luck` attribute may be changed on the first upgrade roll. If it happens, upgrade of the second attribute will be using the original luck value.
 
-- Other two unique primary attributes are randomly selected to be downgraded: 
-  
+### Downgrades
+
+- Other two unique primary attributes are randomly selected to be downgraded:
   - Each of these attributes are rolled against `chaos` roll
   - If chaos wins (its value is strictly greater)
     - `Default` roll is used to generate a new potential value for the attribute.
@@ -104,5 +110,25 @@ After rolling initial values for each attributes:
       - the attribute value is assigned to it
     - otherwise(new value ≥ existing value) nothing changes and the attribute value stays the same
   - if chaos doesn't win (tie or loses), nothing changes and the attribute value stays the same
-
 - The values of remaining primary attributes are left untouched (i.e. they are `default` roll).
+
+## Cat secondary stats generation
+
+- Constitution (Ceiling: strength, floor: agility) - affects maximum health and its regeneration
+- Speed (Ceiling: agility, floor: Strength) - affects movement speed
+- Perception (Ceiling: intelligence, floor: Luck) - affects how much cat can see
+- Melee combat (Ceiling: strength, floor: agility) - affects melee attacks
+- Ranged combat (Ceiling: agility, floor: luck) - affects ranged attacks
+- Magic combat (Ceiling: magic, floor: luck)
+- Willpower (Ceiling: intelligence, floor: charm) - affects mental resistance
+
+Their generation while begins with `Default` roll, must compete against ceiling and floor attributes.
+
+- Once attribute value is generated, its roll is compared against ceiling attribute roll. 
+- If ceiling attribute roll loses to generated attribute roll (i.e. it's strictly less)
+    - the generation is considered invalid, and roll happens again.
+- Otherwise: new generated attribute roll competes against floor attribute.
+- If floor attribute roll wins to generated attribute roll (i.e. it's strictly greater)
+    - the generation is considered invalid, and roll happens again.
+
+The game tries to roll this way several(16) times, if rolls doesn't succeed, last generated value is used.
