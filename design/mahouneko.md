@@ -88,13 +88,13 @@ School also have base attributes:
 Each primary attribute is initially assigned a value using the standard `Default` roll of `8d10(drop 4 high)`, with an average value around 13.
 After rolling initial values for the attributes some are upgraded and some are downgraded.
 
-### Roadmap:
+### Algorithm overview
 
-Primary attributes generation goes by this roadmap:
+Primary attributes generation goes according to this algorithm:
 
-* Upgrades
-* Downgrades
-* Clamping
+1. Upgrades
+2. Downgrades
+3. Clamping
 
 #### Upgrades
 
