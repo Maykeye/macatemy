@@ -88,7 +88,15 @@ School also have base attributes:
 Each primary attribute is initially assigned a value using the standard `Default` roll of `8d10(drop 4 high)`, with an average value around 13.
 After rolling initial values for the attributes some are upgraded and some are downgraded.
 
-### Upgrades
+### Roadmap:
+
+Primary attributes generation goes by this roadmap:
+
+* Upgrades
+* Downgrades
+* Clamping
+
+#### Upgrades
 
 - Two unique primary attributes are randomly selected to be upgraded:
   - Each of these attributes are rolled against `luck roll` (eg `1d{strength} vs 1d{luck}`).
@@ -100,7 +108,7 @@ After rolling initial values for the attributes some are upgraded and some are d
   - if `luck roll` doesn't win (tie or loses), nothing changes and the attribute value stays the same
   - **NOTE**: during reroll the `luck` attribute may be changed on the first upgrade roll. If it happens, upgrade of the second attribute will be using the original luck value.
 
-### Downgrades
+#### Downgrades
 
 - Other two unique primary attributes are randomly selected to be downgraded:
   - Each of these attributes are rolled against `chaos` roll
@@ -111,6 +119,10 @@ After rolling initial values for the attributes some are upgraded and some are d
     - otherwise(new value ≥ existing value) nothing changes and the attribute value stays the same
   - if chaos doesn't win (tie or loses), nothing changes and the attribute value stays the same
 - The values of remaining primary attributes are left untouched (i.e. they are `default` roll).
+
+#### Clamping
+
+After value of the each primary attribute is initialized, they are clamped into the range of `[4..36]`
 
 ## Cat secondary stats generation
 
