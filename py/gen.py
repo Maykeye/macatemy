@@ -14,11 +14,11 @@ class Roll:
 
     def roll(self, apply_trait_bonus=False) -> int:
         values = [random.randint(1, self.side_num) for _ in range(self.dice_num)]
-        values.sort()
         if self.drop_best:
+            values.sort()
             values = values[: -self.drop_best]
         bonus = self.add
-        return sum(values) + self.add
+        return sum(values) + bonus
 
     def __call__(self):
         return self.roll()
@@ -29,6 +29,7 @@ CHAOS = Roll(dice_num=8, side_num=10, drop_best=4)
 
 GEN_MIN = 4
 GEN_MAX = 36
+SECONDARY_GEN_DIV = 3
 
 
 def clamp(x, vmin, vmax):
@@ -47,9 +48,11 @@ class Attribute:
             self.value = ATTR_GEN.roll()
 
     def init_secondary(self, ceiling: "Attribute", floor: "Attribute"):
-        base = int((ceiling.value * 3 + floor.value) / 4)
-        bonus_roll = Roll(1, Trait.ROLL_BONUS * 2 + 1, add=-Trait.ROLL_BONUS - 1)()
-        self.value = base + bonus_roll
+        base = ceiling.value
+        N = SECONDARY_GEN_DIV
+        bonus_roll = Roll(1, N + 1, add=-(N + 2))
+        bonus = bonus_roll()
+        self.value = base + bonus
         self.clamp(GEN_MIN, GEN_MAX)
 
     def clamp(self, vmin, vmax):
@@ -147,7 +150,7 @@ class Cat:
             self.prim_attr.strength, self.prim_attr.agility
         )
         self.sec_attr.agility.init_secondary(
-            self.prim_attr.strength, self.prim_attr.agility
+            self.prim_attr.agility, self.prim_attr.strength
         )
 
     def __str__(self) -> str:

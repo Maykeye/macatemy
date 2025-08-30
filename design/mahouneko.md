@@ -46,13 +46,13 @@ Primary attributes are attributes on their own. Secondary attributes are based u
 
 Secondary attribute are based upon other attributes.
 
-- Constitution (Based on strength, agility) - affects maximum health and its regeneration
-- Speed (Based on agility, Strength) - affects movement speed
-- Perception (Based on intelligence, Luck) - affects how much cat can see
-- Melee combat (Based on strength, agility) - affects melee attacks
-- Ranged combat (Based on agility, luck) - affects ranged attacks
-- Magic combat (Based on magic, luck)
-- Willpower (Based on intelligence, charm) - affects mental resistance
+- Constitution (Based on strength, aux agility) - affects maximum health and its regeneration
+- Speed (Based on agility, aux Strength) - affects movement speed
+- Perception (Based on intelligence, aux Luck) - affects how much cat can see
+- Melee combat (Based on strength, aux agility) - affects melee attacks
+- Ranged combat (Based on agility, aux luck) - affects ranged attacks
+- Magic combat (Based on magic, aux luck)
+- Willpower (Based on intelligence, aux charm) - affects mental resistance
 
 ### Secondary attributes related to school of magic.
 
@@ -126,24 +126,30 @@ After value of the each primary attribute is initialized, they are clamped into 
 
 ## Cat secondary stats generation
 
-- Constitution (Ceiling: strength, floor: agility) - affects maximum health and its regeneration
-- Speed (Ceiling: agility, floor: Strength) - affects movement speed
-- Perception (Ceiling: intelligence, floor: Luck) - affects how much cat can see
-- Melee combat (Ceiling: strength, floor: agility) - affects melee attacks
-- Ranged combat (Ceiling: agility, floor: luck) - affects ranged attacks
-- Magic combat (Ceiling: magic, floor: luck)
-- Willpower (Ceiling: intelligence, floor: charm) - affects mental resistance
+Secondary attributes are based on the other existing attributes and not rolled according to `Default` roll.
 
-Their generation while begins with `Default` roll, must compete against ceiling and floor attributes.
+### Algorithm overview
 
-- Once attribute value is generated, its roll is compared against ceiling attribute roll. 
-- If ceiling attribute roll loses to generated attribute roll (i.e. it's strictly less)
-    - the generation is considered invalid, and roll happens again.
-- Otherwise: new generated attribute roll competes against floor attribute.
-- If floor attribute roll wins to generated attribute roll (i.e. it's strictly greater)
-    - the generation is considered invalid, and roll happens again.
+Primary attributes generation goes according to this algorithm:
 
-The game tries to roll this way several(16) times, if rolls doesn't succeed, last generated value is used.
+1. Generate deterministic `base` value of the secondary attribute
+2. Generate random `bonus` value of the secondary attribute
+3. Clamp their sum
+
+
+#### Generating deterministic base of the secondary attribute
+
+For a base we take `floor((2 * base attribute value + 1 * aux attribute value)/3)`.
+As the result base attribute matters much more than secondary.
+
+### Generate random bonus
+
+Bonus is generated as from trait bonus/penalty. It's calculated as `2d{N+1}-(N+2)`, where `N` is a trait bonus, on default settings with `N=3` we get a roll of `2d4-5` getting bonus in range of
+`[-3..3]` with bias around `0` and probability of rolled value is less likely the more it's distanced from `0`.
+
+### Clamping of the secondary attribute
+
+After base value and bonus value are added, the attribute is clamped into default generation range of `[4..36]`
 
 ## Traits
 
@@ -159,5 +165,5 @@ The traits are:
     - Wizardly (+3 magic), dully (-3 magic)
     - Pretty (+3 charm) or scruffy (-3 charm)
 
-The traits for primary attributes always apply for secondary attributes as well. For "ceiling" attributes they are weaker (i.e. +2/-2), for floor they are even more weaker (+1/-1)
+The traits for primary attributes always apply for secondary attributes as well. "Base" attributes have bonus penalty of +2/-2, while aux attributes are +1/-1.
 
