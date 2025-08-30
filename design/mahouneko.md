@@ -132,3 +132,20 @@ Their generation while begins with `Default` roll, must compete against ceiling 
     - the generation is considered invalid, and roll happens again.
 
 The game tries to roll this way several(16) times, if rolls doesn't succeed, last generated value is used.
+
+## Traits
+
+Each cat is spawn with random number of traits.
+
+The traits are:
+
+- Attribute based strength. They can provide bonuses(default +3) and penalties(default -3), no cats can be generated with the contradicting traits(later they can earn them, eg `mighty` cat can get sick and become `weakly` which negates the mighty)
+    - Mighty (+3 strength) or weakly (-3 strength)
+    - Smarty (+3 intelligence) or dumby (-3 intelligence)
+    - Lucky (+3 luck) or unlucky(-3 luck)
+    - Swifty (+3 agility) or clumsy (-3 agility)
+    - Wizardly (+3 magic), dully (-3 magic)
+    - Pretty (+3 charm) or scruffy (-3 charm)
+
+The traits for primary attributes always apply for secondary attributes as well. For "ceiling" attributes they are weaker (i.e. +2/-2), for floor they are even more weaker (+1/-1)
+
