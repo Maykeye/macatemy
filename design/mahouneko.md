@@ -136,7 +136,6 @@ Primary attributes generation goes according to this algorithm:
 2. Generate random `bonus` value of the secondary attribute
 3. Clamp their sum
 
-
 #### Generating deterministic base of the secondary attribute
 
 For a base we take `floor((2 * base attribute value + 1 * aux attribute value)/3)`.
@@ -158,12 +157,11 @@ Each cat is spawn with random number of traits.
 The traits are:
 
 - Attribute based strength. They can provide bonuses(default +3) and penalties(default -3), no cats can be generated with the contradicting traits(later they can earn them, eg `mighty` cat can get sick and become `weakly` which negates the mighty)
-    - Mighty (+3 strength) or weakly (-3 strength)
-    - Smarty (+3 intelligence) or dumby (-3 intelligence)
-    - Lucky (+3 luck) or unlucky(-3 luck)
-    - Swifty (+3 agility) or clumsy (-3 agility)
-    - Wizardly (+3 magic), dully (-3 magic)
-    - Pretty (+3 charm) or scruffy (-3 charm)
+  - Mighty (+3 strength) or weakly (-3 strength)
+  - Smarty (+3 intelligence) or dumby (-3 intelligence)
+  - Lucky (+3 luck) or unlucky(-3 luck)
+  - Swifty (+3 agility) or clumsy (-3 agility)
+  - Wizardly (+3 magic), dully (-3 magic)
+  - Pretty (+3 charm) or scruffy (-3 charm)
 
 The traits for primary attributes always apply for secondary attributes as well. "Base" attributes have bonus penalty of +2/-2, while aux attributes are +1/-1.
-
