@@ -1,12 +1,16 @@
 mod inspector_plugin;
 mod light_plugin;
 mod player_control_plugin;
+
 use bevy::prelude::*;
 use inspector_plugin::InspectorPlugin;
 use light_plugin::LightPlugin;
 use player_control_plugin::PlayerControlPlugin;
 use player_input_stage::PlayerInputStagesPlugin;
 mod player_input_stage;
+
+#[path = "./tests/test_utils.rs"]
+mod test_utils;
 
 fn spawn_map(
     mut commands: Commands,

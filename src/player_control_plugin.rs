@@ -67,3 +67,7 @@ impl Plugin for PlayerControlPlugin {
         app.add_systems(PlayerInputPostUpdate, player_cmds);
     }
 }
+
+#[cfg(test)]
+#[path = "./tests/test_player_control_plugin.rs"]
+mod test_player_control_plugin;
