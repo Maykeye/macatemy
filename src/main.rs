@@ -1,6 +1,8 @@
+mod inspector_plugin;
 mod light_plugin;
 mod player_control_plugin;
 use bevy::prelude::*;
+use inspector_plugin::InspectorPlugin;
 use light_plugin::LightPlugin;
 use player_control_plugin::PlayerControlPlugin;
 
@@ -15,6 +17,7 @@ fn spawn_map(
         ..Default::default()
     });
     commands.spawn((
+        Name::new("TestCube"),
         Transform::from_xyz(0.0, 0.0, 0.0),
         Mesh3d(mesh),
         MeshMaterial3d(material),
@@ -23,7 +26,12 @@ fn spawn_map(
 
 fn main() {
     let mut app = App::new();
-    app.add_plugins((DefaultPlugins, LightPlugin, PlayerControlPlugin));
+    app.add_plugins((
+        DefaultPlugins,
+        LightPlugin,
+        PlayerControlPlugin,
+        InspectorPlugin,
+    ));
     app.add_systems(Startup, spawn_map);
     app.run();
 }

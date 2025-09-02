@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 fn spawn_light(mut commands: Commands) {
-    commands.spawn((DirectionalLight::default(),));
+    commands.spawn((Name::new("Sun"), DirectionalLight::default()));
 }
 
 pub struct LightPlugin;
