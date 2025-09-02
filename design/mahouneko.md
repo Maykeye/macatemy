@@ -139,7 +139,6 @@ The traits are:
 ## Generic Implementation roadmap
 
 - [design] write this design document
-- [hello] create an empty world
 - [world.gen] generate a world
 - [world.gen.empty] generate an empty world 10x10
   provide: [world.gen]
@@ -149,7 +148,8 @@ deps: `bevy.input` `world.control.wasd`,`world.control.qe`, `world.control.mouse
 - [world.control.wasd] implement control camera using `w`, `a`, `s`, `d` to move around axis,
 - [world.control.qe] implement control camera using `q`, `e` to move camera up/down by level
 - [world.control.mouse.edge] implement control camera using mouse on edge
-- [world.control.mouse.zoom] implement control mouse wheel to zoom in/out
+- [world.control.mouse.zoom] implement control mouse wheel to "zoom" in/out
+    - move camera closer/further to surface
 -[bevy.input] implement a system for user input and tests
 deps: [bevy.input.fake], [bevy.input.real], [bevy.cmd.quit]
     - [bevy.input.real] route keyboard to inputs

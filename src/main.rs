@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use inspector_plugin::InspectorPlugin;
 use light_plugin::LightPlugin;
 use player_control_plugin::PlayerControlPlugin;
-use player_input_stage::PlayerInputPreUpdate;
+use player_input_stage::PlayerInputStagesPlugin;
 mod player_input_stage;
 
 fn spawn_map(
@@ -30,7 +30,7 @@ fn main() {
     let mut app = App::new();
     app.add_plugins((
         DefaultPlugins,
-        PlayerInputPreUpdate, // stage is plugin itself
+        PlayerInputStagesPlugin,
         LightPlugin,
         PlayerControlPlugin,
         InspectorPlugin,
