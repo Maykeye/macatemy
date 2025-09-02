@@ -1,14 +1,13 @@
 use std::f32::consts::FRAC_PI_2;
-
+mod light_plugin;
 use bevy::{input::mouse::AccumulatedMouseMotion, prelude::*, window::PrimaryWindow};
+use light_plugin::LightPlugin;
 
 fn spawn_map(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // Spawn light
-    commands.spawn((DirectionalLight::default(),));
     // Spawn cubes
     let mesh = meshes.add(Cuboid::from_length(1.0));
     let material = materials.add(StandardMaterial {
@@ -55,7 +54,7 @@ fn player_look(
 
 fn main() {
     let mut app = App::new();
-    app.add_plugins((DefaultPlugins,));
+    app.add_plugins((DefaultPlugins, LightPlugin));
     app.add_systems(Startup, spawn_map);
     app.add_systems(Update, player_look);
     app.run();
