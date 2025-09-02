@@ -1,8 +1,11 @@
+use crate::player_input_stage::{PlayerInputPostUpdate, PlayerInputPreUpdate};
+use bevy::{input::mouse::AccumulatedMouseMotion, prelude::*, window::PrimaryWindow};
 use std::f32::consts::FRAC_PI_2;
 
-use bevy::{input::mouse::AccumulatedMouseMotion, prelude::*, window::PrimaryWindow};
-
-use crate::player_input_stage::PlayerInputPreUpdate;
+#[derive(Event, Debug)]
+pub enum PlayerCommand {
+    QuitApp,
+}
 
 pub struct PlayerControlPlugin;
 
@@ -40,9 +43,27 @@ fn player_look(
     player.rotation = Quat::from_euler(EulerRot::YXZ, yaw, pitch, 0.0);
 }
 
+fn player_kb(mut ev: EventWriter<PlayerCommand>, input: Res<ButtonInput<KeyCode>>) {
+    if input.pressed(KeyCode::ControlLeft) && input.just_pressed(KeyCode::KeyQ) {
+        ev.write(PlayerCommand::QuitApp);
+    }
+}
+
+fn player_cmds(mut evs: EventReader<PlayerCommand>, mut exit: EventWriter<AppExit>) {
+    for ev in evs.read() {
+        use PlayerCommand::*;
+        match ev {
+            QuitApp => exit.write(AppExit::Success),
+        };
+    }
+}
+
 impl Plugin for PlayerControlPlugin {
     fn build(&self, app: &mut App) {
+        app.add_event::<PlayerCommand>();
         app.add_systems(Startup, spawn_camera);
         app.add_systems(PlayerInputPreUpdate, player_look);
+        app.add_systems(PlayerInputPreUpdate, player_kb);
+        app.add_systems(PlayerInputPostUpdate, player_cmds);
     }
 }
