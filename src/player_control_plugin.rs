@@ -2,6 +2,8 @@ use std::f32::consts::FRAC_PI_2;
 
 use bevy::{input::mouse::AccumulatedMouseMotion, prelude::*, window::PrimaryWindow};
 
+use crate::player_input_stage::PlayerInputPreUpdate;
+
 pub struct PlayerControlPlugin;
 
 fn spawn_camera(mut commands: Commands) {
@@ -41,6 +43,6 @@ fn player_look(
 impl Plugin for PlayerControlPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_camera);
-        app.add_systems(Update, player_look);
+        app.add_systems(PlayerInputPreUpdate, player_look);
     }
 }
