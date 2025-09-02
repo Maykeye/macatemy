@@ -14,17 +14,6 @@ General information about the game:
 - Some kittens can stay for "specific education" for more than that, they can also became teachers
 - The player starts with one cat (let's call it the founding mother)
 
-## Implementation roadmap
-
-- [design] write this design document
-- [hello] create an empty world
-- [world.gen] generate a world
-- [world.gen.empty] generate an empty world 10x10
-  provide: [world.gen]
-- [roll] generate a system of rolls using provided RNG
-- [cat.gen] generate a cat
-  - deps: [world.gen], [roll] 
-
 ## General attributes.
 
 Every cat(cat and kitten alike) have the attributes, that are separated into priamry and secondary.
@@ -46,13 +35,13 @@ Primary attributes are attributes on their own. Secondary attributes are based u
 
 Secondary attribute are based upon other attributes.
 
-- Constitution (Based on strength, aux agility) - affects maximum health and its regeneration
-- Speed (Based on agility, aux Strength) - affects movement speed
-- Perception (Based on intelligence, aux Luck) - affects how much cat can see
-- Melee combat (Based on strength, aux agility) - affects melee attacks
-- Ranged combat (Based on agility, aux luck) - affects ranged attacks
-- Magic combat (Based on magic, aux luck)
-- Willpower (Based on intelligence, aux charm) - affects mental resistance
+- Constitution (Based on strength, agility) - affects maximum health and its regeneration
+- Speed (Based on agility, Strength) - affects movement speed
+- Perception (Based on intelligence, Luck) - affects how much cat can see
+- Melee combat (Based on strength, agility) - affects melee attacks
+- Ranged combat (Based on agility, luck) - affects ranged attacks
+- Magic combat (Based on magic, luck)
+- Willpower (Based on intelligence, charm) - affects mental resistance
 
 ### Secondary attributes related to school of magic.
 
@@ -88,15 +77,7 @@ School also have base attributes:
 Each primary attribute is initially assigned a value using the standard `Default` roll of `8d10(drop 4 high)`, with an average value around 13.
 After rolling initial values for the attributes some are upgraded and some are downgraded.
 
-### Algorithm overview
-
-Primary attributes generation goes according to this algorithm:
-
-1. Upgrades
-2. Downgrades
-3. Clamping
-
-#### Upgrades
+### Upgrades
 
 - Two unique primary attributes are randomly selected to be upgraded:
   - Each of these attributes are rolled against `luck roll` (eg `1d{strength} vs 1d{luck}`).
@@ -108,7 +89,7 @@ Primary attributes generation goes according to this algorithm:
   - if `luck roll` doesn't win (tie or loses), nothing changes and the attribute value stays the same
   - **NOTE**: during reroll the `luck` attribute may be changed on the first upgrade roll. If it happens, upgrade of the second attribute will be using the original luck value.
 
-#### Downgrades
+### Downgrades
 
 - Other two unique primary attributes are randomly selected to be downgraded:
   - Each of these attributes are rolled against `chaos` roll
@@ -120,35 +101,26 @@ Primary attributes generation goes according to this algorithm:
   - if chaos doesn't win (tie or loses), nothing changes and the attribute value stays the same
 - The values of remaining primary attributes are left untouched (i.e. they are `default` roll).
 
-#### Clamping
-
-After value of the each primary attribute is initialized, they are clamped into the range of `[4..36]`
-
 ## Cat secondary stats generation
 
-Secondary attributes are based on the other existing attributes and not rolled according to `Default` roll.
+- Constitution (Ceiling: strength, floor: agility) - affects maximum health and its regeneration
+- Speed (Ceiling: agility, floor: Strength) - affects movement speed
+- Perception (Ceiling: intelligence, floor: Luck) - affects how much cat can see
+- Melee combat (Ceiling: strength, floor: agility) - affects melee attacks
+- Ranged combat (Ceiling: agility, floor: luck) - affects ranged attacks
+- Magic combat (Ceiling: magic, floor: luck)
+- Willpower (Ceiling: intelligence, floor: charm) - affects mental resistance
 
-### Algorithm overview
+Their generation while begins with `Default` roll, must compete against ceiling and floor attributes.
 
-Primary attributes generation goes according to this algorithm:
+- Once attribute value is generated, its roll is compared against ceiling attribute roll. 
+- If ceiling attribute roll loses to generated attribute roll (i.e. it's strictly less)
+    - the generation is considered invalid, and roll happens again.
+- Otherwise: new generated attribute roll competes against floor attribute.
+- If floor attribute roll wins to generated attribute roll (i.e. it's strictly greater)
+    - the generation is considered invalid, and roll happens again.
 
-1. Generate deterministic `base` value of the secondary attribute
-2. Generate random `bonus` value of the secondary attribute
-3. Clamp their sum
-
-#### Generating deterministic base of the secondary attribute
-
-For a base we take `floor((2 * base attribute value + 1 * aux attribute value)/3)`.
-As the result base attribute matters much more than secondary.
-
-### Generate random bonus
-
-Bonus is generated as from trait bonus/penalty. It's calculated as `2d{N+1}-(N+2)`, where `N` is a trait bonus, on default settings with `N=3` we get a roll of `2d4-5` getting bonus in range of
-`[-3..3]` with bias around `0` and probability of rolled value is less likely the more it's distanced from `0`.
-
-### Clamping of the secondary attribute
-
-After base value and bonus value are added, the attribute is clamped into default generation range of `[4..36]`
+The game tries to roll this way several(16) times, if rolls doesn't succeed, last generated value is used.
 
 ## Traits
 
@@ -157,11 +129,38 @@ Each cat is spawn with random number of traits.
 The traits are:
 
 - Attribute based strength. They can provide bonuses(default +3) and penalties(default -3), no cats can be generated with the contradicting traits(later they can earn them, eg `mighty` cat can get sick and become `weakly` which negates the mighty)
-  - Mighty (+3 strength) or weakly (-3 strength)
-  - Smarty (+3 intelligence) or dumby (-3 intelligence)
-  - Lucky (+3 luck) or unlucky(-3 luck)
-  - Swifty (+3 agility) or clumsy (-3 agility)
-  - Wizardly (+3 magic), dully (-3 magic)
-  - Pretty (+3 charm) or scruffy (-3 charm)
+    - Mighty (+3 strength) or weakly (-3 strength)
+    - Smarty (+3 intelligence) or dumby (-3 intelligence)
+    - Lucky (+3 luck) or unlucky(-3 luck)
+    - Swifty (+3 agility) or clumsy (-3 agility)
+    - Wizardly (+3 magic), dully (-3 magic)
+    - Pretty (+3 charm) or scruffy (-3 charm)
 
-The traits for primary attributes always apply for secondary attributes as well. "Base" attributes have bonus penalty of +2/-2, while aux attributes are +1/-1.
+## Generic Implementation roadmap
+
+- [design] write this design document
+- [hello] create an empty world
+- [world.gen] generate a world
+- [world.gen.empty] generate an empty world 10x10
+  provide: [world.gen]
+- [world.gen.empty.dummy] add 1x1 cube at cell (4,4,0) and (5,5,1)
+- [world.control] implement moving camera around
+deps: `bevy.input` `world.control.wasd`,`world.control.qe`, `world.control.mouse.edge`, `world.control.mouse.zoom`
+- [world.control.wasd] implement control camera using `w`, `a`, `s`, `d` to move around axis,
+- [world.control.qe] implement control camera using `q`, `e` to move camera up/down by level
+- [world.control.mouse.edge] implement control camera using mouse on edge
+- [world.control.mouse.zoom] implement control mouse wheel to zoom in/out
+-[bevy.input] implement a system for user input and tests
+deps: [bevy.input.fake], [bevy.input.real], [bevy.cmd.quit]
+    - [bevy.input.real] route keyboard to inputs
+    - [bevy.input.fake] route presses from files
+    - [bevy.cmd.quit] quit on pressing 'escape`
+- [roll] generate a system of rolls using provided RNG
+- [cat.gen] generate a cat
+  - deps: [world.gen], [roll] 
+
+### Today step: up to [bevy.input]
+It means
+- [bevy.input.real] route keyboard to inputs
+- [bevy.input.fake] route presses from files
+- [bevy.cmd.quit] quit on pressing 'escape`
