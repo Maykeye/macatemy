@@ -1,14 +1,17 @@
+use std::usize;
+
 use bevy::prelude::*;
 
 pub struct GameMapPlugin;
 
 /// A single cell on a game map.
 /// TODO: use Entity?
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 enum GameMapCellFloor {
     None,
     Ground,
     Grass,
+    Stone,
 }
 
 struct GameMapCell {
@@ -26,13 +29,22 @@ impl GameMapLayer {
         let rows = (0..rows)
             .map(|z| {
                 (0..cols)
-                    .map(|_x| GameMapCell {
-                        floor: if z == 1 {
-                            GameMapCellFloor::Ground
-                        } else {
-                            GameMapCellFloor::Grass
-                        },
-                        floor_entity: Entity::PLACEHOLDER,
+                    .map(|x| {
+                        let side_road_offset: i32 = (z as i32) - 1;
+                        GameMapCell {
+                            floor: match side_road_offset {
+                                0 => GameMapCellFloor::Stone,
+                                1 | 3 => GameMapCellFloor::Ground,
+                                2 => match x % 4 {
+                                    0 | 1 => GameMapCellFloor::Ground,
+                                    _ => GameMapCellFloor::Stone,
+                                },
+                                4 => GameMapCellFloor::Stone,
+                                _ => GameMapCellFloor::Grass,
+                            },
+
+                            floor_entity: Entity::PLACEHOLDER,
+                        }
                     })
                     .collect()
             })
@@ -45,6 +57,7 @@ impl GameMapLayer {
 struct GameMapResources {
     grass: Vec<Handle<StandardMaterial>>,
     ground: Vec<Handle<StandardMaterial>>,
+    stone: Vec<Handle<StandardMaterial>>,
     r#box: Handle<Mesh>,
 }
 
@@ -67,65 +80,46 @@ impl GameMapResources {
     fn init_ground() -> Vec<StandardMaterial> {
         const NUM_PER_TWEAK: usize = 4;
 
-        // Chocolate: (7B3F00)
+        fn make_ground(i: usize, r: u32, g: u32, b: u32) -> StandardMaterial {
+            let (r, g, b) = ((r as f32) / 255.0, (g as f32) / 255.0, (b as f32) / 255.0);
+            let i = i as f32;
+            let delta = (i / (NUM_PER_TWEAK as f32)) * 0.15;
+            let base_color = Color::linear_rgb(r, g, b + delta);
+            StandardMaterial {
+                base_color,
+                ..Default::default()
+            }
+        }
+
+        [].into_iter()
+            .chain((0..NUM_PER_TWEAK).map(|i| {
+                // Gingerbread
+                make_ground(i, 0x5E, 0x2C, 0x04)
+            }))
+            .chain(
+                // Brunette
+                (0..NUM_PER_TWEAK).map(|i| make_ground(i, 0x3B, 0x1E, 0x08)),
+            )
+            .collect()
+    }
+
+    fn init_stone() -> Vec<StandardMaterial> {
+        const NUM_PER_TWEAK: usize = 4;
+        fn make_stone(i: usize, r: f32, g: f32, b: f32) -> StandardMaterial {
+            let i = i as f32;
+            let delta = (i / (NUM_PER_TWEAK as f32)) * 0.16 - 0.08;
+            let base_color = Color::linear_rgb(0.5 + delta * r, 0.5 + delta * g, 0.5 + delta * b);
+            StandardMaterial {
+                base_color,
+                ..Default::default()
+            }
+        }
+
         (0..NUM_PER_TWEAK)
-            .map(|i| {
-                let i = i as f32;
-                let delta = (i / (NUM_PER_TWEAK as f32)) * 0.25;
-                let base_color = Color::linear_rgb(0.4823529411764706, 0.24705882352941178, delta);
-                StandardMaterial {
-                    base_color,
-                    ..Default::default()
-                }
-            })
-            .chain(
-                // Gingerbread: (5E2C04)
-                (0..NUM_PER_TWEAK).map(|i| {
-                    let i = i as f32;
-                    let delta = (i / (NUM_PER_TWEAK as f32)) * 0.15 - 0.05;
-                    let base_color = Color::linear_rgb(
-                        0.3686274509803922,
-                        0.17254901960784313 - delta,
-                        0.01568627450980392 + delta,
-                    );
-                    StandardMaterial {
-                        base_color,
-                        ..Default::default()
-                    }
-                }),
-            )
-            .chain(
-                // Coffee: (6F4E37)
-                (0..NUM_PER_TWEAK).map(|i| {
-                    let i = i as f32;
-                    let delta = (i / (NUM_PER_TWEAK as f32)) * 0.15 - 0.05;
-                    let base_color = Color::linear_rgb(
-                        0.43529411764705883,
-                        0.3058823529411765 + delta,
-                        0.21568627450980393 + delta,
-                    );
-                    StandardMaterial {
-                        base_color,
-                        ..Default::default()
-                    }
-                }),
-            )
-            .chain(
-                // Brunette: (3B1E08)
-                (0..NUM_PER_TWEAK).map(|i| {
-                    let i = i as f32;
-                    let delta = (i / (NUM_PER_TWEAK as f32)) * 0.10;
-                    let base_color = Color::linear_rgb(
-                        0.23137254901960785,
-                        0.11764705882352941 + delta,
-                        0.03137254901960784 + delta * 1.2,
-                    );
-                    StandardMaterial {
-                        base_color,
-                        ..Default::default()
-                    }
-                }),
-            )
+            .map(|i| make_stone(i, 1.0, 1.0, 1.0))
+            .chain((0..NUM_PER_TWEAK).map(|i| make_stone(i, 1.0, 0.2, 0.2)))
+            .chain((0..NUM_PER_TWEAK).map(|i| make_stone(i, 0.0, 1.0, 0.2)))
+            .chain((0..NUM_PER_TWEAK).map(|i| make_stone(i, 0.1, -0.1, 1.0)))
             .collect()
     }
 }
@@ -145,9 +139,14 @@ impl FromWorld for GameMapResources {
             .into_iter()
             .map(|mat| material_assets.add(mat))
             .collect();
+        let stone = Self::init_stone()
+            .into_iter()
+            .map(|mat| material_assets.add(mat))
+            .collect();
         Self {
             grass,
             ground,
+            stone,
             r#box: box_mesh,
         }
     }
@@ -160,15 +159,13 @@ fn spawn_map(mut commands: Commands, game_map_res: Res<GameMapResources>) {
     for z in 0..10 {
         for x in 0..10 {
             let not_so_rng = z * 17 + x * 11;
-            let material = match layer.rows[z][x].floor {
+            let materials = match layer.rows[z][x].floor {
                 GameMapCellFloor::None => continue,
-                GameMapCellFloor::Ground => {
-                    game_map_res.ground[not_so_rng % game_map_res.ground.len()].clone()
-                }
-                GameMapCellFloor::Grass => {
-                    game_map_res.grass[not_so_rng % game_map_res.grass.len()].clone()
-                }
+                GameMapCellFloor::Ground => &game_map_res.ground,
+                GameMapCellFloor::Grass => &game_map_res.grass,
+                GameMapCellFloor::Stone => &game_map_res.stone,
             };
+            let material = materials[not_so_rng % materials.len()].clone();
             let xf = x as f32;
             let zf = z as f32;
             let entity = commands

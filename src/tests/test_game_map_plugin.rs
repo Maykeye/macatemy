@@ -2,7 +2,7 @@ use bevy::{platform::collections::HashSet, prelude::*};
 
 use crate::{
     game_map_plugin::{GameMapCellFloor, GameMapLayer},
-    test_utils::{get_resource, make_defaullt_plugins_for_headless_test},
+    test_utils::{get_resource, make_defaullt_plugins_for_headless_test, rgb_max_avg_delta},
 };
 
 use super::GameMapPlugin;
@@ -46,7 +46,7 @@ fn test_dummy_map_all_floor_entites_are_unique() {
 }
 
 #[test]
-fn test_dummy_map_floor() {
+fn test_dummy_map_floor_tile() {
     let mut app = make_app();
     app.update();
     let map_layer = app
@@ -54,22 +54,22 @@ fn test_dummy_map_floor() {
         .query::<&GameMapLayer>()
         .single(&app.world())
         .unwrap();
-    assert!(matches!(
-        map_layer.rows[1][0].floor,
-        GameMapCellFloor::Ground
-    ));
-    assert!(matches!(
-        map_layer.rows[0][0].floor,
-        GameMapCellFloor::Grass
-    ));
-    assert!(matches!(
-        map_layer.rows[4][0].floor,
-        GameMapCellFloor::Grass
-    ));
-    assert!(matches!(
-        map_layer.rows[5][3].floor,
-        GameMapCellFloor::Grass
-    ));
+
+    // Ensure road-like
+    assert_eq!(map_layer.rows[0][3].floor, GameMapCellFloor::Grass);
+    assert_eq!(map_layer.rows[1][3].floor, GameMapCellFloor::Stone);
+    assert_eq!(map_layer.rows[2][3].floor, GameMapCellFloor::Ground);
+    assert_eq!(map_layer.rows[3][0].floor, GameMapCellFloor::Ground);
+    assert_eq!(map_layer.rows[3][1].floor, GameMapCellFloor::Ground);
+    assert_eq!(map_layer.rows[3][2].floor, GameMapCellFloor::Stone);
+    assert_eq!(map_layer.rows[3][3].floor, GameMapCellFloor::Stone);
+    assert_eq!(map_layer.rows[3][4].floor, GameMapCellFloor::Ground);
+    assert_eq!(map_layer.rows[4][3].floor, GameMapCellFloor::Ground);
+    assert_eq!(map_layer.rows[5][3].floor, GameMapCellFloor::Stone);
+    assert_eq!(map_layer.rows[6][3].floor, GameMapCellFloor::Grass);
+    assert_eq!(map_layer.rows[7][3].floor, GameMapCellFloor::Grass);
+    assert_eq!(map_layer.rows[8][3].floor, GameMapCellFloor::Grass);
+    assert_eq!(map_layer.rows[9][3].floor, GameMapCellFloor::Grass);
 }
 
 #[test]
@@ -83,19 +83,21 @@ fn test_dummy_map_floor_material() {
         .unwrap();
 
     let mats = get_resource::<Assets<StandardMaterial>>(&app);
-    let some_ground = app
-        .world()
-        .get::<MeshMaterial3d<StandardMaterial>>(map_layer.rows[1][0].floor_entity)
-        .unwrap();
-    let color = mats.get(some_ground).unwrap().base_color.to_linear();
-    let max = color.red.max(color.blue).max(color.green);
-    assert_eq!(max, color.red);
 
-    let some_grass = app
-        .world()
-        .get::<MeshMaterial3d<StandardMaterial>>(map_layer.rows[4][4].floor_entity)
-        .unwrap();
-    let color = mats.get(some_grass).unwrap().base_color.to_linear();
-    let max = color.red.max(color.blue).max(color.green);
-    assert_eq!(max, color.green);
+    // Get color and max channel value
+    let get_color = |row: usize, column: usize| {
+        let ent = app
+            .world()
+            .get::<MeshMaterial3d<StandardMaterial>>(map_layer.rows[row][column].floor_entity)
+            .unwrap();
+        let color = mats.get(ent).unwrap().base_color.to_linear();
+        (color, color.red.max(color.blue).max(color.green))
+    };
+
+    let (some_grass, some_grass_max) = get_color(0, 2);
+    assert_eq!(some_grass.green, some_grass_max);
+    let (some_stone, _some_stone_max) = get_color(1, 2);
+    assert!(rgb_max_avg_delta(some_stone) < 0.05, "not gray enough");
+    let (some_ground, some_ground_max) = get_color(2, 2);
+    assert_eq!(some_ground.red, some_ground_max);
 }

@@ -64,3 +64,13 @@ pub fn make_defaullt_plugins_for_headless_test() -> PluginGroupBuilder {
 pub fn get_resource<R: Resource>(app: &App) -> &R {
     app.world().get_resource::<R>().unwrap()
 }
+
+/// Calculates the max delta between any channel and average value of the channels.
+/// Basically if the value is small, it's grayscale (white/gray/black)
+pub fn rgb_max_avg_delta(color: LinearRgba) -> f32 {
+    let avg = (color.red + color.green + color.blue) / 3.0;
+    (color.red - avg)
+        .abs()
+        .min((color.green - avg).abs())
+        .min((color.blue - avg).abs())
+}
