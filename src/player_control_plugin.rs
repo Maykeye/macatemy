@@ -5,18 +5,38 @@ use crate::{
 use bevy::{input::mouse::AccumulatedMouseMotion, prelude::*, window::PrimaryWindow};
 use std::f32::consts::FRAC_PI_2;
 
+pub struct PlayerControlPlugin;
+
+#[derive(Debug, Clone, Copy)]
+pub struct MoveCameraXZ(Vec3);
+
+impl MoveCameraXZ {
+    pub fn new(forward: f32, right: f32) -> Self {
+        Self(Vec3::new(right, 0.0, forward))
+    }
+    pub fn forward(&self) -> f32 {
+        self.0.z
+    }
+    pub fn right(&self) -> f32 {
+        self.0.x
+    }
+}
+
 #[derive(Event, Debug)]
 pub enum PlayerCommand {
     QuitApp,
+    MoveCameraXZ(MoveCameraXZ),
 }
 
-pub struct PlayerControlPlugin;
+#[derive(Component)]
+pub struct Player;
 
 fn spawn_camera(mut commands: Commands) {
     let looking_at = Vec3::new(5.0, 0.0, 5.0);
     let tr = Transform::from_xyz(0.0, 2.0, 4.0).looking_at(looking_at, Vec3::Y);
     commands.spawn((
         GameObject,
+        Player,
         Name::new("Player Camera"),
         Camera3d::default(),
         tr,
@@ -48,18 +68,50 @@ fn player_look(
     player.rotation = Quat::from_euler(EulerRot::YXZ, yaw, pitch, 0.0);
 }
 
+fn directional_keys(input: &ButtonInput<KeyCode>, pos: KeyCode, neg: KeyCode) -> f32 {
+    if input.pressed(pos) {
+        1.0
+    } else if input.pressed(neg) {
+        -1.0
+    } else {
+        0.0
+    }
+}
 fn player_kb(mut ev: EventWriter<PlayerCommand>, input: Res<ButtonInput<KeyCode>>) {
     if input.pressed(KeyCode::ControlLeft) && input.just_pressed(KeyCode::KeyQ) {
         ev.write(PlayerCommand::QuitApp);
     }
+
+    let move_fwd = directional_keys(&input, KeyCode::KeyW, KeyCode::KeyS);
+    let move_right = directional_keys(&input, KeyCode::KeyD, KeyCode::KeyA);
+    if (move_fwd, move_right) != (0.0, 0.0) {
+        ev.write(PlayerCommand::MoveCameraXZ(MoveCameraXZ::new(
+            move_fwd, move_right,
+        )));
+    }
 }
 
-fn player_cmds(mut evs: EventReader<PlayerCommand>, mut exit: EventWriter<AppExit>) {
+fn player_cmd_quit(mut evs: EventReader<PlayerCommand>, mut exit: EventWriter<AppExit>) {
+    for _ in evs.read().filter(|x| matches!(x, PlayerCommand::QuitApp)) {
+        exit.write(AppExit::Success);
+    }
+}
+
+fn player_cmd_move_camera(
+    mut evs: EventReader<PlayerCommand>,
+    mut player: Single<&mut Transform, With<Player>>,
+    time: Res<Time<Real>>,
+) {
+    const CAMERA_SPEED: f32 = 3.00;
     for ev in evs.read() {
-        use PlayerCommand::*;
-        match ev {
-            QuitApp => exit.write(AppExit::Success),
+        let PlayerCommand::MoveCameraXZ(move_camera) = ev else {
+            continue;
         };
+
+        let transition =
+            move_camera.forward() * player.forward() + move_camera.right() * player.right();
+        let transition = transition.with_y(0.0).normalize_or_zero();
+        player.translation += transition * CAMERA_SPEED * time.delta_secs();
     }
 }
 
@@ -71,6 +123,7 @@ fn ensure_grabbed_cursor(window: &mut Window) {
         window.title = "Press ESC to release the cursor.".to_string();
     }
 }
+
 fn ensure_released_cursor(window: &mut Window) {
     use bevy::window::CursorGrabMode;
     if window.cursor_options.grab_mode != CursorGrabMode::None {
@@ -115,7 +168,7 @@ impl Plugin for PlayerControlPlugin {
         );
         app.add_systems(
             PlayerInputPostUpdate,
-            player_cmds.run_if(in_state(GameState::Game)),
+            (player_cmd_quit, player_cmd_move_camera).run_if(in_state(GameState::Game)),
         );
     }
 }
