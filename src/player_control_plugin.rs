@@ -1,4 +1,7 @@
-use crate::player_input_stage::{PlayerInputPostUpdate, PlayerInputPreUpdate};
+use crate::{
+    game_state_plugin::{GameObject, GameState},
+    player_input_stage::{PlayerInputPostUpdate, PlayerInputPreUpdate},
+};
 use bevy::{input::mouse::AccumulatedMouseMotion, prelude::*, window::PrimaryWindow};
 use std::f32::consts::FRAC_PI_2;
 
@@ -13,6 +16,7 @@ fn spawn_camera(mut commands: Commands) {
     let looking_at = Vec3::new(5.0, 0.0, 5.0);
     let tr = Transform::from_xyz(0.0, 2.0, 4.0).looking_at(looking_at, Vec3::Y);
     commands.spawn((
+        GameObject,
         Name::new("Player Camera"),
         Camera3d::default(),
         tr,
@@ -62,10 +66,15 @@ fn player_cmds(mut evs: EventReader<PlayerCommand>, mut exit: EventWriter<AppExi
 impl Plugin for PlayerControlPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<PlayerCommand>();
-        app.add_systems(Startup, spawn_camera);
-        app.add_systems(PlayerInputPreUpdate, player_look);
-        app.add_systems(PlayerInputPreUpdate, player_kb);
-        app.add_systems(PlayerInputPostUpdate, player_cmds);
+        app.add_systems(Update, spawn_camera.run_if(in_state(GameState::Init)));
+        app.add_systems(
+            PlayerInputPreUpdate,
+            (player_look, player_kb).run_if(in_state(GameState::Game)),
+        );
+        app.add_systems(
+            PlayerInputPostUpdate,
+            player_cmds.run_if(in_state(GameState::Game)),
+        );
     }
 }
 

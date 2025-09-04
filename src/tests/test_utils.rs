@@ -61,6 +61,11 @@ pub fn make_defaullt_plugins_for_headless_test() -> PluginGroupBuilder {
         .set(winit)
 }
 
+/// Test if the entity is still alive
+pub fn is_entity_alive(app: &App, ent: Entity) -> bool {
+    app.world().get_entity(ent).is_ok()
+}
+
 pub fn get_resource<R: Resource>(app: &App) -> &R {
     app.world().get_resource::<R>().unwrap()
 }

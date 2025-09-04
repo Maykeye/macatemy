@@ -2,6 +2,8 @@ use std::usize;
 
 use bevy::prelude::*;
 
+use crate::game_state_plugin::{GameObject, GameState};
+
 pub struct GameMapPlugin;
 
 /// A single cell on a game map.
@@ -182,6 +184,7 @@ fn spawn_map(mut commands: Commands, game_map_res: Res<GameMapResources>) {
     }
     commands
         .spawn((
+            GameObject,
             Name::new("Layer"),
             Transform::from_xyz(0.0, 0.0, 0.0),
             Visibility::default(),
@@ -192,7 +195,7 @@ fn spawn_map(mut commands: Commands, game_map_res: Res<GameMapResources>) {
 
 impl Plugin for GameMapPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_map);
+        app.add_systems(Update, spawn_map.run_if(in_state(GameState::Init)));
         app.init_resource::<GameMapResources>();
     }
 }
