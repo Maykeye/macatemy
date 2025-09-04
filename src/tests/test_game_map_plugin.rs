@@ -1,4 +1,4 @@
-use bevy::{ecs::query, platform::collections::HashSet, prelude::*};
+use bevy::{platform::collections::HashSet, prelude::*};
 
 use crate::{
     game_map_plugin::{GameMapCellFloor, GameMapLayer},

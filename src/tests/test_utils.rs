@@ -2,7 +2,6 @@
 #![allow(dead_code)]
 use bevy::{
     app::PluginGroupBuilder,
-    ecs::query::QueryData,
     input::keyboard::KeyboardInput,
     prelude::*,
     render::{RenderPlugin, settings::WgpuSettings},
