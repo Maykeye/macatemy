@@ -140,27 +140,26 @@ The traits are:
 
 - [design] write this design document
 - [world.gen] generate a world
-- [world.gen.empty] generate an empty world 10x10
+- [world.gen.empty.dummy] : generate 10x10 dummy world where we have a "road" next to the side of the map
   provide: [world.gen]
-- [world.gen.empty.dummy] add 1x1 cube at cell (4,4,0) and (5,5,1)
+- [world.gen.layers]: support several layers of the map
 - [world.control] implement moving camera around
-deps: `bevy.input` `world.control.wasd`,`world.control.qe`, `world.control.mouse.edge`, `world.control.mouse.zoom`
-- [world.control.wasd] implement control camera using `w`, `a`, `s`, `d` to move around axis,
-- [world.control.qe] implement control camera using `q`, `e` to move camera up/down by level
-- [world.control.mouse.edge] implement control camera using mouse on edge
-- [world.control.mouse.zoom] implement control mouse wheel to "zoom" in/out
-    - move camera closer/further to surface
+- delayed: [world.control.qe] implement control camera using `q`, `e` to move camera up/down by level
+    deps: [world.gen.layers]
 -[bevy.input] implement a system for user input and tests
 deps: [bevy.input.fake], [bevy.input.real], [bevy.cmd.quit]
     - [bevy.input.real] route keyboard to inputs
-    - [bevy.input.fake] route presses from files
+    - [bevy.input.fake] route presses from files/tests
     - [bevy.cmd.quit] quit on pressing 'escape`
 - [roll] generate a system of rolls using provided RNG
 - [cat.gen] generate a cat
   - deps: [world.gen], [roll] 
 
-### Today step: up to [bevy.input]
-It means
-- [bevy.input.real] route keyboard to inputs
-- [bevy.input.fake] route presses from files
-- [bevy.cmd.quit] quit on pressing 'escape`
+## Short goal: world.control
+- [world.control] implement moving camera around
+deps: `bevy.input` `world.control.wasd`,`world.control.qe`, `world.control.mouse.edge`, `world.control.mouse.zoom`
+- [world.control.grab] prevent map cursor from leaving the window
+- [world.control.wasd] implement control camera using `w`, `a`, `s`, `d` to move around its forward/right vector,
+- [world.control.mouse.edge] implement control camera using mouse on edge
+- [world.control.mouse.zoom] implement control mouse wheel to "zoom" in/out
+    - move camera closer/further to surface
