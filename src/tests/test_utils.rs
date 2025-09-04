@@ -1,6 +1,13 @@
 #![cfg(test)]
 #![allow(dead_code)]
-use bevy::{input::keyboard::KeyboardInput, prelude::*};
+use bevy::{
+    app::PluginGroupBuilder,
+    ecs::query::QueryData,
+    input::keyboard::KeyboardInput,
+    prelude::*,
+    render::{RenderPlugin, settings::WgpuSettings},
+    winit::{WakeUp, WinitPlugin},
+};
 
 pub fn is_key_just_pressed(app: &App, keycode: KeyCode) -> bool {
     let input = app.world().resource::<ButtonInput<KeyCode>>();
@@ -36,4 +43,25 @@ where
         .resource::<Events<E>>()
         .iter_current_update_events()
         .any(|ev| *ev == event)
+}
+
+pub fn make_defaullt_plugins_for_headless_test() -> PluginGroupBuilder {
+    // #[tests] are run in separate threads which winit doesn't like
+    let mut winit = WinitPlugin::<WakeUp>::default();
+    winit.run_on_any_thread = true;
+
+    DefaultPlugins
+        .set(RenderPlugin {
+            render_creation: WgpuSettings {
+                backends: None,
+                ..default()
+            }
+            .into(),
+            ..default()
+        })
+        .set(winit)
+}
+
+pub fn get_resource<R: Resource>(app: &App) -> &R {
+    app.world().get_resource::<R>().unwrap()
 }

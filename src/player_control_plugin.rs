@@ -10,7 +10,8 @@ pub enum PlayerCommand {
 pub struct PlayerControlPlugin;
 
 fn spawn_camera(mut commands: Commands) {
-    let tr = Transform::from_xyz(0.0, 2.0, 4.0).looking_at(Vec3::ZERO, Vec3::Y);
+    let looking_at = Vec3::new(5.0, 0.0, 5.0);
+    let tr = Transform::from_xyz(0.0, 2.0, 4.0).looking_at(looking_at, Vec3::Y);
     commands.spawn((
         Name::new("Player Camera"),
         Camera3d::default(),
