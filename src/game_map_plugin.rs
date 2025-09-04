@@ -10,7 +10,7 @@ pub struct GameMapPlugin;
 /// TODO: use Entity?
 #[derive(Debug, PartialEq, Eq)]
 enum GameMapCellFloor {
-    None,
+    // None,
     Ground,
     Grass,
     Stone,
@@ -162,7 +162,7 @@ fn spawn_map(mut commands: Commands, game_map_res: Res<GameMapResources>) {
         for x in 0..10 {
             let not_so_rng = z * 17 + x * 11;
             let materials = match layer.rows[z][x].floor {
-                GameMapCellFloor::None => continue,
+                // GameMapCellFloor::None => continue,
                 GameMapCellFloor::Ground => &game_map_res.ground,
                 GameMapCellFloor::Grass => &game_map_res.grass,
                 GameMapCellFloor::Stone => &game_map_res.stone,
