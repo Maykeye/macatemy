@@ -9,10 +9,16 @@ use super::PlayerControlPlugin;
 
 #[cfg(test)]
 fn make_app() -> App {
+    use bevy::state::app::StatesPlugin;
+
+    use crate::game_state_plugin::GameStatePlugin;
+
     let mut app = App::new();
     app.add_plugins((
         MinimalPlugins,
         InputPlugin,
+        StatesPlugin,
+        GameStatePlugin,
         PlayerInputStagesPlugin,
         PlayerControlPlugin,
     ));

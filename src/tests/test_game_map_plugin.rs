@@ -2,6 +2,7 @@ use bevy::{platform::collections::HashSet, prelude::*};
 
 use crate::{
     game_map_plugin::{GameMapCellFloor, GameMapLayer},
+    game_state_plugin::GameStatePlugin,
     test_utils::{get_resource, make_defaullt_plugins_for_headless_test, rgb_max_avg_delta},
 };
 
@@ -9,7 +10,11 @@ use super::GameMapPlugin;
 
 fn make_app() -> App {
     let mut app = App::new();
-    app.add_plugins((make_defaullt_plugins_for_headless_test(), GameMapPlugin));
+    app.add_plugins((
+        make_defaullt_plugins_for_headless_test(),
+        GameStatePlugin,
+        GameMapPlugin,
+    ));
     app
 }
 
