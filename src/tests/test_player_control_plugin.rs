@@ -34,7 +34,7 @@ fn pressing_ctrl_q_leads_to_exit() {
     app.update();
     assert!(!contains_exact_event(&app, AppExit::Success));
 
-    press_key(&mut app, KeyCode::ControlLeft);
+    press_key(&mut app, KeyCode::AltLeft);
     app.update();
     assert!(!contains_exact_event(&app, AppExit::Success));
 
@@ -54,7 +54,7 @@ fn pressing_q_before_ctrl_doesnt_lead_to_exit() {
     app.update();
     assert!(!contains_exact_event(&app, AppExit::Success));
 
-    press_key(&mut app, KeyCode::ControlLeft);
+    press_key(&mut app, KeyCode::AltLeft);
     app.update();
     assert!(!contains_exact_event(&app, AppExit::Success));
 }
@@ -126,7 +126,7 @@ fn move_camera_right_diagonal_direction() {
     let delta = impl_camera_move_test(initial_pos, KeyCode::KeyD);
     assert!(delta.x > 0.0);
     assert!(delta.z > 0.0);
-    assert!(delta.x.abs() > delta.z.abs()); //Z goes down faster as X almost here
+    assert!(delta.x.abs() > delta.z.abs());
 
     // Inverse (note, we use MinimalPlugins so constructing anew is safe)
     let delta = impl_camera_move_test(initial_pos, KeyCode::KeyA);

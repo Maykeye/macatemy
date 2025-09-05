@@ -51,11 +51,12 @@ fn spawn_camera(mut commands: Commands) {
 
 fn player_look(
     mut player: Single<&mut Transform, With<Camera3d>>,
+    keyboard: Res<ButtonInput<KeyCode>>,
     mouse_motion: Res<AccumulatedMouseMotion>,
     time: Res<Time>,
     window: Single<&Window, With<PrimaryWindow>>,
 ) {
-    if !window.focused {
+    if !window.focused || !keyboard.pressed(KeyCode::ControlLeft) {
         return;
     }
     let dt = time.delta_secs();
@@ -78,7 +79,7 @@ fn directional_keys(input: &ButtonInput<KeyCode>, pos: KeyCode, neg: KeyCode) ->
     }
 }
 fn player_kb(mut ev: EventWriter<PlayerCommand>, input: Res<ButtonInput<KeyCode>>) {
-    if input.pressed(KeyCode::ControlLeft) && input.just_pressed(KeyCode::KeyQ) {
+    if input.pressed(KeyCode::AltLeft) && input.just_pressed(KeyCode::KeyQ) {
         ev.write(PlayerCommand::QuitApp);
     }
 
@@ -117,9 +118,8 @@ fn player_cmd_move_camera(
 
 fn ensure_grabbed_cursor(window: &mut Window) {
     use bevy::window::CursorGrabMode;
-    if window.cursor_options.grab_mode != CursorGrabMode::Locked {
-        window.cursor_options.visible = false;
-        window.cursor_options.grab_mode = CursorGrabMode::Locked;
+    if window.cursor_options.grab_mode == CursorGrabMode::None {
+        window.cursor_options.grab_mode = CursorGrabMode::Confined;
         window.title = "Press ESC to release the cursor.".to_string();
     }
 }
