@@ -144,8 +144,7 @@ The traits are:
   provide: [world.gen]
 - [world.gen.layers]: support several layers of the map
 - [world.control] implement moving camera around
-- delayed: [world.control.qe] implement control camera using `q`, `e` to move camera up/down by level
-    deps: [world.gen.layers]
+    deps: [world.control.qe]
 -[bevy.input] implement a system for user input and tests
 deps: [bevy.input.fake], [bevy.input.real], [bevy.cmd.quit]
     - [bevy.input.real] route keyboard to inputs
@@ -155,13 +154,12 @@ deps: [bevy.input.fake], [bevy.input.real], [bevy.cmd.quit]
 - [cat.gen] generate a cat
   - deps: [world.gen], [roll] 
 
-## Short goal: world.control
+Done, but may need refinement:
 - [world.control] implement moving camera around
-deps: `bevy.input` `world.control.wasd`,`world.control.qe`, `world.control.mouse.edge`, `world.control.mouse.zoom`
-- [world.control.mouse.zoom] implement control mouse wheel to "zoom" in/out
-    - move camera closer/further to surface
-- done
     - [world.control.grab] prevent map cursor from leaving the window
     - [world.control.wasd] implement control camera using `w`, `a`, `s`, `d` to move around its forward/right vector,
-- omit
-    - [world.control.mouse.edge] in favor of wasd
+    - [world.control.mouse.zoom] implement control mouse wheel to "zoom" in/out
+
+next goal:
+- [world.control.qe] implement control camera using `q`, `e` to move camera up/down by level
+    deps: [world.gen.layers]

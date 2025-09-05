@@ -3,7 +3,7 @@ use crate::{
     player_input_stage::{PlayerInputPostUpdate, PlayerInputPreUpdate},
 };
 use bevy::{
-    input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseScrollUnit, MouseWheel},
+    input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseScrollUnit},
     prelude::*,
     window::PrimaryWindow,
 };
@@ -56,12 +56,12 @@ fn spawn_camera(mut commands: Commands) {
 
 fn player_look(
     mut player: Single<&mut Transform, With<Camera3d>>,
-    keyboard: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
     mouse_motion: Res<AccumulatedMouseMotion>,
     time: Res<Time>,
     window: Single<&Window, With<PrimaryWindow>>,
 ) {
-    if !window.focused || !keyboard.pressed(KeyCode::ControlLeft) {
+    if !window.focused || !mouse.pressed(MouseButton::Middle) {
         return;
     }
     let dt = time.delta_secs();
@@ -102,7 +102,7 @@ fn player_move_with_mouse_wheel(
     mut evs: EventWriter<PlayerCommand>,
     mouse_wheel: Res<AccumulatedMouseScroll>,
 ) {
-    const CAMERA_ZOOM_SPEED: f32 = 5.0;
+    const CAMERA_ZOOM_SPEED: f32 = 15.0;
     if mouse_wheel.delta.y == 0.0 {
         return;
     }
