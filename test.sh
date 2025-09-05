@@ -1,1 +1,1 @@
-cargo nextest run
+cargo nextest run $*

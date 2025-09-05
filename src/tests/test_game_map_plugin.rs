@@ -1,9 +1,15 @@
+use approx::assert_abs_diff_eq;
 use bevy::{platform::collections::HashSet, prelude::*};
 
 use crate::{
     game_map_plugin::{GameMapCellFloor, GameMapData, GameMapLayerRenderer},
     game_state_plugin::GameStatePlugin,
-    test_utils::{get_resource, make_defaullt_plugins_for_headless_test, rgb_max_avg_delta},
+    player_control_plugin::PlayerControlPlugin,
+    player_input_stage::PlayerInputStagesPlugin,
+    test_utils::{
+        get_resource, make_defaullt_plugins_for_headless_test, press_key, release_key,
+        rgb_max_avg_delta,
+    },
 };
 
 use super::GameMapPlugin;
@@ -127,4 +133,62 @@ fn test_dummy_map_floor_material() {
     assert!(rgb_max_avg_delta(some_stone) < 0.05, "not gray enough");
     let (some_ground, some_ground_max) = get_color(2, 2);
     assert_eq!(some_ground.red, some_ground_max);
+}
+
+#[test]
+fn test_shifting_layers_up_down() {
+    let mut app = make_app();
+    app.add_plugins((PlayerInputStagesPlugin, PlayerControlPlugin));
+
+    app.update();
+    let renderer = app
+        .world_mut()
+        .query_filtered::<Entity, With<GameMapLayerRenderer>>()
+        .single(&app.world())
+        .unwrap();
+
+    app.update();
+    press_key(&mut app, KeyCode::ShiftRight);
+
+    // intermediate functions
+    fn skip(app: &mut App) {}
+    fn release_comma(app: &mut App) {
+        release_key(app, KeyCode::Comma);
+    }
+    fn release_period(app: &mut App) {
+        release_key(app, KeyCode::Period);
+    }
+    fn press_comma(app: &mut App) {
+        press_key(app, KeyCode::Comma);
+    }
+    fn press_period(app: &mut App) {
+        press_key(app, KeyCode::Period);
+    }
+
+    let actions: &[(fn(&mut App), f32)] = &[
+        (skip, 0.0),
+        (press_comma, -1.0),
+        (skip, -1.0),
+        (skip, -1.0),
+        (release_comma, -1.0),
+        (press_comma, -2.0),
+        (release_comma, -2.0),
+        (press_comma, -2.0),
+        (skip, -2.0),
+        (release_comma, -2.0),
+        (press_period, -1.0),
+        (skip, -1.0),
+        (release_period, -1.0),
+        (press_period, 0.0),
+        (release_period, 0.0),
+        (press_period, 0.0),
+        (release_period, 0.0),
+    ];
+
+    for (lambda, expected) in actions {
+        lambda(&mut app);
+        app.update();
+        let pos = app.world().get::<Transform>(renderer).unwrap().translation;
+        assert_abs_diff_eq!(pos.y, expected);
+    }
 }

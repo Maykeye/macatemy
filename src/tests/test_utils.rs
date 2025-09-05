@@ -34,6 +34,11 @@ pub fn press_key(app: &mut App, keycode: KeyCode) {
     app.world_mut().send_event(ev);
 }
 
+pub fn release_key(app: &mut App, keycode: KeyCode) {
+    let ev = keyboard_input_from_keycode(keycode, false);
+    app.world_mut().send_event(ev);
+}
+
 pub fn contains_exact_event<E>(app: &App, event: E) -> bool
 where
     E: Event + Eq,

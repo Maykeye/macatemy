@@ -1,4 +1,5 @@
 use crate::{
+    game_map_plugin::ShiftActiveLayerEvent,
     game_state_plugin::{GameObject, GameState},
     player_input_stage::{PlayerInputPostUpdate, PlayerInputPreUpdate},
 };
@@ -31,6 +32,7 @@ pub enum PlayerCommand {
     QuitApp,
     MoveCameraXZ(MoveCameraXZ),
     MoveCameraInOut(f32),
+    ShiftActiveLayer(isize),
 }
 
 #[derive(Component)]
@@ -74,27 +76,40 @@ fn player_look(
     player.rotation = Quat::from_euler(EulerRot::YXZ, yaw, pitch, 0.0);
 }
 
-fn directional_keys(input: &ButtonInput<KeyCode>, pos: KeyCode, neg: KeyCode) -> f32 {
+fn directional_keys(input: &ButtonInput<KeyCode>, pos: KeyCode, neg: KeyCode) -> isize {
     if input.pressed(pos) {
-        1.0
+        1
     } else if input.pressed(neg) {
-        -1.0
+        -1
     } else {
-        0.0
+        0
     }
 }
 
 fn player_keyboard_input(mut ev: EventWriter<PlayerCommand>, input: Res<ButtonInput<KeyCode>>) {
+    let shift = input.pressed(KeyCode::ShiftLeft) || input.pressed(KeyCode::ShiftRight);
+
+    // Alt+Q
     if input.pressed(KeyCode::AltLeft) && input.just_pressed(KeyCode::KeyQ) {
         ev.write(PlayerCommand::QuitApp);
     }
 
+    // W, A, S, D
     let move_fwd = directional_keys(&input, KeyCode::KeyW, KeyCode::KeyS);
     let move_right = directional_keys(&input, KeyCode::KeyD, KeyCode::KeyA);
-    if (move_fwd, move_right) != (0.0, 0.0) {
+    if (move_fwd, move_right) != (0, 0) {
         ev.write(PlayerCommand::MoveCameraXZ(MoveCameraXZ::new(
-            move_fwd, move_right,
+            move_fwd as f32,
+            move_right as f32,
         )));
+    }
+
+    // <, >
+    if shift && input.just_pressed(KeyCode::Comma) {
+        ev.write(PlayerCommand::ShiftActiveLayer(1));
+    }
+    if shift && input.just_pressed(KeyCode::Period) {
+        ev.write(PlayerCommand::ShiftActiveLayer(-1));
     }
 }
 
@@ -141,6 +156,14 @@ fn player_cmd_move_camera(
         let transition = transition * CAMERA_SPEED * time.delta_secs();
         player.translation += transition;
         player.translation.y = player.translation.y.clamp(1.0, 5.0);
+    }
+}
+
+fn player_cmd_shift_active_layer(mut evs: EventReader<PlayerCommand>, mut cmds: Commands) {
+    for ev in evs.read() {
+        if let PlayerCommand::ShiftActiveLayer(step) = ev {
+            cmds.trigger(ShiftActiveLayerEvent(*step));
+        }
     }
 }
 
@@ -201,7 +224,12 @@ impl Plugin for PlayerControlPlugin {
         );
         app.add_systems(
             PlayerInputPostUpdate,
-            (player_cmd_quit, player_cmd_move_camera).run_if(in_state(GameState::Game)),
+            (
+                player_cmd_quit,
+                player_cmd_shift_active_layer,
+                player_cmd_move_camera,
+            )
+                .run_if(in_state(GameState::Game)),
         );
     }
 }

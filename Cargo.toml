@@ -11,6 +11,9 @@ opt-level = 1
 [profile.dev.package."*"]
 opt-level = 3
 
+[dev-dependencies]
+approx = "0.5.1"
+
 [dependencies]
 bevy = { version = "0.16.1" }
 bevy-inspector-egui = "0.33.1"

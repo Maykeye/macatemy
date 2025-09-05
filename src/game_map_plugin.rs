@@ -4,6 +4,10 @@ use crate::game_state_plugin::{GameObject, GameState};
 
 pub struct GameMapPlugin;
 
+/// Observable event to move current layer renderer
+#[derive(Event)]
+pub struct ShiftActiveLayerEvent(pub isize);
+
 /// A single cell on a game map.
 /// TODO: use Entity?
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -107,6 +111,7 @@ struct GameMapData {
     stone: Vec<Handle<StandardMaterial>>,
     r#box: Handle<Mesh>,
     map: GameMap,
+    current_layer: usize,
 }
 
 impl GameMapData {
@@ -197,6 +202,7 @@ impl FromWorld for GameMapData {
             stone,
             r#box: box_mesh,
             map: GameMap::new(0, 0, 0),
+            current_layer: 0,
         }
     }
 }
@@ -243,9 +249,29 @@ fn spawn_map(mut commands: Commands, mut game_map_res: ResMut<GameMapData>) {
         .add_children(&children);
 }
 
+fn shift_active_layer(
+    ev: Trigger<ShiftActiveLayerEvent>,
+    renderers: Query<&mut Transform, With<GameMapLayerRenderer>>,
+    mut map_data: ResMut<GameMapData>,
+) {
+    let Some(next_current_layer) = map_data.current_layer.checked_add_signed(ev.0) else {
+        return;
+    };
+    if next_current_layer >= map_data.map.layers {
+        return;
+    }
+    map_data.current_layer = next_current_layer;
+
+    let delta_y = ev.0 as f32;
+    for mut renderer in renderers {
+        renderer.translation.y -= delta_y;
+    }
+}
+
 impl Plugin for GameMapPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, spawn_map.run_if(in_state(GameState::Init)));
+        app.add_observer(shift_active_layer);
         app.init_resource::<GameMapData>();
     }
 }
