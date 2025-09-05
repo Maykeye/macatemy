@@ -84,3 +84,7 @@ pub fn rgb_max_avg_delta(color: LinearRgba) -> f32 {
         .min((color.green - avg).abs())
         .min((color.blue - avg).abs())
 }
+
+pub fn get_position(app: &App, ent: Entity) -> Vec3 {
+    app.world().get::<Transform>(ent).unwrap().translation
+}
