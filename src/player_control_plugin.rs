@@ -2,7 +2,11 @@ use crate::{
     game_state_plugin::{GameObject, GameState},
     player_input_stage::{PlayerInputPostUpdate, PlayerInputPreUpdate},
 };
-use bevy::{input::mouse::AccumulatedMouseMotion, prelude::*, window::PrimaryWindow};
+use bevy::{
+    input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseScrollUnit, MouseWheel},
+    prelude::*,
+    window::PrimaryWindow,
+};
 use std::f32::consts::FRAC_PI_2;
 
 pub struct PlayerControlPlugin;
@@ -26,6 +30,7 @@ impl MoveCameraXZ {
 pub enum PlayerCommand {
     QuitApp,
     MoveCameraXZ(MoveCameraXZ),
+    MoveCameraInOut(f32),
 }
 
 #[derive(Component)]
@@ -78,7 +83,8 @@ fn directional_keys(input: &ButtonInput<KeyCode>, pos: KeyCode, neg: KeyCode) ->
         0.0
     }
 }
-fn player_kb(mut ev: EventWriter<PlayerCommand>, input: Res<ButtonInput<KeyCode>>) {
+
+fn player_keyboard_input(mut ev: EventWriter<PlayerCommand>, input: Res<ButtonInput<KeyCode>>) {
     if input.pressed(KeyCode::AltLeft) && input.just_pressed(KeyCode::KeyQ) {
         ev.write(PlayerCommand::QuitApp);
     }
@@ -90,6 +96,23 @@ fn player_kb(mut ev: EventWriter<PlayerCommand>, input: Res<ButtonInput<KeyCode>
             move_fwd, move_right,
         )));
     }
+}
+
+fn player_move_with_mouse_wheel(
+    mut evs: EventWriter<PlayerCommand>,
+    mouse_wheel: Res<AccumulatedMouseScroll>,
+) {
+    const CAMERA_ZOOM_SPEED: f32 = 5.0;
+    if mouse_wheel.delta.y == 0.0 {
+        return;
+    }
+
+    let move_by = match mouse_wheel.unit {
+        MouseScrollUnit::Line => mouse_wheel.delta.y,
+        MouseScrollUnit::Pixel => mouse_wheel.delta.y / 16.0, // have no idea how to cause this event
+    };
+
+    evs.write(PlayerCommand::MoveCameraInOut(move_by * CAMERA_ZOOM_SPEED));
 }
 
 fn player_cmd_quit(mut evs: EventReader<PlayerCommand>, mut exit: EventWriter<AppExit>) {
@@ -105,14 +128,19 @@ fn player_cmd_move_camera(
 ) {
     const CAMERA_SPEED: f32 = 3.00;
     for ev in evs.read() {
-        let PlayerCommand::MoveCameraXZ(move_camera) = ev else {
-            continue;
+        use PlayerCommand::*;
+        let transition = match ev {
+            MoveCameraXZ(move_camera) => {
+                let transition =
+                    move_camera.forward() * player.forward() + move_camera.right() * player.right();
+                transition.with_y(0.0).normalize_or_zero()
+            }
+            MoveCameraInOut(n) => *n * player.forward(),
+            _ => continue,
         };
-
-        let transition =
-            move_camera.forward() * player.forward() + move_camera.right() * player.right();
-        let transition = transition.with_y(0.0).normalize_or_zero();
-        player.translation += transition * CAMERA_SPEED * time.delta_secs();
+        let transition = transition * CAMERA_SPEED * time.delta_secs();
+        player.translation += transition;
+        player.translation.y = player.translation.y.clamp(1.0, 5.0);
     }
 }
 
@@ -164,7 +192,12 @@ impl Plugin for PlayerControlPlugin {
         app.add_systems(Update, spawn_camera.run_if(in_state(GameState::Init)));
         app.add_systems(
             PlayerInputPreUpdate,
-            (player_look, player_kb).run_if(in_state(GameState::Game)),
+            (
+                player_look,
+                player_keyboard_input,
+                player_move_with_mouse_wheel,
+            )
+                .run_if(in_state(GameState::Game)),
         );
         app.add_systems(
             PlayerInputPostUpdate,

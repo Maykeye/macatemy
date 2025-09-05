@@ -160,7 +160,8 @@ deps: [bevy.input.fake], [bevy.input.real], [bevy.cmd.quit]
 deps: `bevy.input` `world.control.wasd`,`world.control.qe`, `world.control.mouse.edge`, `world.control.mouse.zoom`
 - [world.control.mouse.zoom] implement control mouse wheel to "zoom" in/out
     - move camera closer/further to surface
-- [world.control.mouse.edge] implement control camera using mouse on edge
 - done
     - [world.control.grab] prevent map cursor from leaving the window
     - [world.control.wasd] implement control camera using `w`, `a`, `s`, `d` to move around its forward/right vector,
+- omit
+    - [world.control.mouse.edge] in favor of wasd
