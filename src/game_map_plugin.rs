@@ -7,7 +7,7 @@ pub struct GameMapPlugin;
 /// A single cell on a game map.
 /// TODO: use Entity?
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum GameMapCellFloor {
+pub enum GameMapCellFloor {
     None,
     Ground,
     Grass,
@@ -15,12 +15,18 @@ enum GameMapCellFloor {
 }
 
 #[derive(Debug, Clone)]
-struct GameMapCell {
+pub struct GameMapCell {
     floor: GameMapCellFloor,
     floor_entity: Entity,
 }
 
 impl GameMapCell {
+    pub fn new_empty() -> Self {
+        Self {
+            floor: GameMapCellFloor::None,
+            floor_entity: Entity::PLACEHOLDER,
+        }
+    }
     pub fn from_floor(floor: GameMapCellFloor) -> Self {
         Self {
             floor,
@@ -30,11 +36,22 @@ impl GameMapCell {
 }
 
 #[derive(Component)]
-pub struct GameMapLayer {
-    rows: Vec<Vec<GameMapCell>>,
+pub struct GameMapLayerRenderer(usize);
+
+pub type GameMapLayer = Vec<Vec<GameMapCell>>;
+
+#[derive(Debug)]
+pub struct GameMap {
+    // Vector of layers [0..layers]
+    // Where layer is a vecotor of rows [0..height]
+    // Where row is a vector of GameMapCell [0..width]
+    pub cells: Vec<GameMapLayer>,
+    pub layers: usize,
+    pub width: usize,
+    pub height: usize,
 }
 
-impl GameMapLayer {
+impl GameMap {
     fn make_ground_layer_floor(row_idx: usize, col_idx: usize) -> GameMapCell {
         use GameMapCellFloor::*;
         GameMapCell::from_floor(match row_idx {
@@ -50,7 +67,7 @@ impl GameMapLayer {
         })
     }
 
-    pub fn new(rows: usize, cols: usize) -> Self {
+    pub fn new_ground_layer(rows: usize, cols: usize) -> GameMapLayer {
         let rows = (0..rows)
             .map(|row_idx| {
                 (0..cols)
@@ -58,19 +75,41 @@ impl GameMapLayer {
                     .collect()
             })
             .collect();
-        Self { rows }
+        rows
+    }
+
+    pub fn new_empty_layer(rows: usize, cols: usize) -> GameMapLayer {
+        (0..rows)
+            .map(|_| (0..cols).map(|_| GameMapCell::new_empty()).collect())
+            .collect()
+    }
+
+    pub fn new(layers: usize, rows: usize, cols: usize) -> Self {
+        let mut map = vec![];
+        map.push(Self::new_ground_layer(rows, cols));
+        for _ in 1..layers {
+            map.push(Self::new_empty_layer(rows, cols));
+        }
+
+        Self {
+            cells: map,
+            width: cols,
+            height: rows,
+            layers,
+        }
     }
 }
 
 #[derive(Resource)]
-struct GameMapResources {
+struct GameMapData {
     grass: Vec<Handle<StandardMaterial>>,
     ground: Vec<Handle<StandardMaterial>>,
     stone: Vec<Handle<StandardMaterial>>,
     r#box: Handle<Mesh>,
+    map: GameMap,
 }
 
-impl GameMapResources {
+impl GameMapData {
     fn init_grass_mat() -> Vec<StandardMaterial> {
         const NUM: usize = 16;
         (1..NUM)
@@ -133,7 +172,7 @@ impl GameMapResources {
     }
 }
 
-impl FromWorld for GameMapResources {
+impl FromWorld for GameMapData {
     fn from_world(world: &mut World) -> Self {
         let mut meshes = world.resource_mut::<Assets<Mesh>>();
         let box_mesh = meshes.add(Cuboid::from_length(1.0));
@@ -157,45 +196,49 @@ impl FromWorld for GameMapResources {
             ground,
             stone,
             r#box: box_mesh,
+            map: GameMap::new(0, 0, 0),
         }
     }
 }
 
-fn spawn_map(mut commands: Commands, game_map_res: Res<GameMapResources>) {
-    let mut layer = GameMapLayer::new(10, 10);
+fn spawn_map(mut commands: Commands, mut game_map_res: ResMut<GameMapData>) {
+    let mut map = GameMap::new(3, 10, 10);
     let mut children = vec![];
 
-    for z in 0..10 {
-        for x in 0..10 {
-            let not_so_rng = z * 17 + x * 11;
-            let materials = match layer.rows[z][x].floor {
+    for row_idx in 0..(map.height) {
+        for col_idx in 0..(map.width) {
+            let not_so_rng = row_idx * 17 + col_idx * 11;
+            let materials = match map.cells[0][row_idx][col_idx].floor {
                 GameMapCellFloor::None => continue,
                 GameMapCellFloor::Ground => &game_map_res.ground,
                 GameMapCellFloor::Grass => &game_map_res.grass,
                 GameMapCellFloor::Stone => &game_map_res.stone,
             };
             let material = materials[not_so_rng % materials.len()].clone();
-            let xf = x as f32;
-            let zf = z as f32;
-            let entity = commands
+            let xf = col_idx as f32;
+            let zf = row_idx as f32;
+            let floor_entity = commands
                 .spawn((
-                    Name::new(format!("Floor#{z}#{x}")),
+                    Name::new(format!("Floor#{row_idx}#{col_idx}")),
                     Mesh3d(game_map_res.r#box.clone()),
                     MeshMaterial3d(material),
                     Transform::from_xyz(xf, 0.0, zf),
                 ))
                 .id();
-            layer.rows[z][x].floor_entity = entity;
-            children.push(entity);
+            map.cells[0][row_idx][col_idx].floor_entity = floor_entity;
+            children.push(floor_entity);
         }
     }
+
+    game_map_res.map = map;
+
     commands
         .spawn((
             GameObject,
             Name::new("Layer"),
             Transform::from_xyz(0.0, 0.0, 0.0),
             Visibility::default(),
-            layer,
+            GameMapLayerRenderer(0),
         ))
         .add_children(&children);
 }
@@ -203,7 +246,7 @@ fn spawn_map(mut commands: Commands, game_map_res: Res<GameMapResources>) {
 impl Plugin for GameMapPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, spawn_map.run_if(in_state(GameState::Init)));
-        app.init_resource::<GameMapResources>();
+        app.init_resource::<GameMapData>();
     }
 }
 
