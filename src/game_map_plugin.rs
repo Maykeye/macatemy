@@ -6,17 +6,27 @@ pub struct GameMapPlugin;
 
 /// A single cell on a game map.
 /// TODO: use Entity?
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum GameMapCellFloor {
-    // None,
+    None,
     Ground,
     Grass,
     Stone,
 }
 
+#[derive(Debug, Clone)]
 struct GameMapCell {
     floor: GameMapCellFloor,
     floor_entity: Entity,
+}
+
+impl GameMapCell {
+    pub fn from_floor(floor: GameMapCellFloor) -> Self {
+        Self {
+            floor,
+            floor_entity: Entity::PLACEHOLDER,
+        }
+    }
 }
 
 #[derive(Component)]
@@ -25,27 +35,26 @@ pub struct GameMapLayer {
 }
 
 impl GameMapLayer {
+    fn make_ground_layer_floor(row_idx: usize, col_idx: usize) -> GameMapCell {
+        use GameMapCellFloor::*;
+        GameMapCell::from_floor(match row_idx {
+            1 => Stone,
+            2 => Ground,
+            3 => {
+                let divider_blocks = [Ground, Ground, Stone, Stone];
+                divider_blocks[col_idx % divider_blocks.len()]
+            }
+            4 => Ground,
+            5 => Stone,
+            _ => Grass,
+        })
+    }
+
     pub fn new(rows: usize, cols: usize) -> Self {
         let rows = (0..rows)
-            .map(|z| {
+            .map(|row_idx| {
                 (0..cols)
-                    .map(|x| {
-                        let side_road_offset: i32 = (z as i32) - 1;
-                        GameMapCell {
-                            floor: match side_road_offset {
-                                0 => GameMapCellFloor::Stone,
-                                1 | 3 => GameMapCellFloor::Ground,
-                                2 => match x % 4 {
-                                    0 | 1 => GameMapCellFloor::Ground,
-                                    _ => GameMapCellFloor::Stone,
-                                },
-                                4 => GameMapCellFloor::Stone,
-                                _ => GameMapCellFloor::Grass,
-                            },
-
-                            floor_entity: Entity::PLACEHOLDER,
-                        }
-                    })
+                    .map(|col_idx| Self::make_ground_layer_floor(row_idx, col_idx))
                     .collect()
             })
             .collect();
@@ -160,7 +169,7 @@ fn spawn_map(mut commands: Commands, game_map_res: Res<GameMapResources>) {
         for x in 0..10 {
             let not_so_rng = z * 17 + x * 11;
             let materials = match layer.rows[z][x].floor {
-                // GameMapCellFloor::None => continue,
+                GameMapCellFloor::None => continue,
                 GameMapCellFloor::Ground => &game_map_res.ground,
                 GameMapCellFloor::Grass => &game_map_res.grass,
                 GameMapCellFloor::Stone => &game_map_res.stone,

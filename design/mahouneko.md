@@ -145,6 +145,10 @@ The traits are:
 - [world.gen.layers]: support several layers of the map
 - [world.control] implement moving camera around
     deps: [world.control.qe]
+
+- [render.layers.above]: allow to render some layers above the current one (semi-transparent)
+- [render.layers.below]: allow to render some layers above the current one (semi-transparent)
+
 -[bevy.input] implement a system for user input and tests
 deps: [bevy.input.fake], [bevy.input.real], [bevy.cmd.quit]
     - [bevy.input.real] route keyboard to inputs
@@ -163,3 +167,8 @@ Done, but may need refinement:
 next goal:
 - [world.control.qe] implement control camera using `q`, `e` to move camera up/down by level
     deps: [world.gen.layers]
+
+
+For layers, we'll move GameMapLayer from component into resource as several GameMapLayer components may be needed to render
+different layers at different Y level
+
