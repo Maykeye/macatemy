@@ -88,3 +88,28 @@ pub fn rgb_max_avg_delta(color: LinearRgba) -> f32 {
 pub fn get_position(app: &App, ent: Entity) -> Vec3 {
     app.world().get::<Transform>(ent).unwrap().translation
 }
+
+pub trait BaseTestSuite {
+    fn app(&mut self) -> &mut App;
+    fn update(mut self) -> Self
+    where
+        Self: Sized,
+    {
+        self.app().update();
+        self
+    }
+    fn press(mut self, keycode: KeyCode) -> Self
+    where
+        Self: Sized,
+    {
+        press_key(self.app(), keycode);
+        self.update()
+    }
+    fn release(mut self, keycode: KeyCode) -> Self
+    where
+        Self: Sized,
+    {
+        release_key(&mut self.app(), keycode);
+        self.update()
+    }
+}
