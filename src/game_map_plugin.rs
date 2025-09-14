@@ -207,7 +207,11 @@ impl FromWorld for GameMapData {
     }
 }
 
-fn spawn_map(mut commands: Commands, mut game_map_res: ResMut<GameMapData>) {
+fn spawn_map(
+    mut commands: Commands,
+    mut game_map_res: ResMut<GameMapData>,
+    asset_server: Res<AssetServer>,
+) {
     let mut map = GameMap::new(3, 10, 10);
     let mut children = vec![];
 
@@ -247,6 +251,12 @@ fn spawn_map(mut commands: Commands, mut game_map_res: ResMut<GameMapData>) {
             GameMapLayerRenderer(0),
         ))
         .add_children(&children);
+
+    commands.spawn((
+        Name::new("cat"),
+        SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/cat3.glb"))),
+        Transform::from_xyz(5.0, 0.0, 5.0),
+    ));
 }
 
 fn shift_active_layer(
